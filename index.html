@@ -13,7 +13,7 @@
             const MININCREASEHUNGER = 20
             const HUNGERNEEDEDTOSEARCHFORFOOD = 100 //when this is reached it will clone
             const HUNGERDEATHAMOUNT = 150 //when this is reached, death
-            const MAXORBS = 300 //once this is hit they will stop spawning
+            const MAXORBS = 250 //once this is hit they will stop spawning
             const MAXSTATDIFFERENCE = 10
             const STARTINGFOODAMOUNT = 10 //amount of times food can be used before it go boom
             const MOVEMENTSPEED = 1 //in ms
@@ -211,7 +211,6 @@
                     let smallX = 1
                     let difference = Math.abs(goX - this.x) //positive value of the difference
 
-                    console.log("Before math, smallX:" + smallX + " smallY:" + smallY + " difference:" + difference + " gradient:" + gradient)
                     if (goX < this.x) { //check if it needs to go left and not right
                         smallX = Math.abs(smallX) * -1
                     } else {
@@ -233,8 +232,6 @@
                         }
                     }           
 
-                    console.log("Moving to " + goX + ", " + goY + " from " + this.x + ", " + this.y + " at " + MS + "ms")
-
                     while (loop < difference) {
                         loop++
                         this.move(smallX, smallY)
@@ -249,15 +246,13 @@
                         }
                         await SLEEP(MS)
                     }
-                    
-                    console.log(this.lengthOfLife + " loops: " + loop + ", Hunger: " + this.hunger + " goX:" + goX + " goY:" + goY + " X:" + this.x + " Y:" + this.y + " smallX:" + smallX + " smallY:" + smallY + " difference:" + difference + " gradient:" + gradient)   
                     this.x = Math.round(this.x) //just in case the num is like 835.0000000000001 or smth
                     this.y = Math.round(this.y)
                     this.object.style.top = this.y + 'px' //set the pos again for the round above
                     this.object.style.left = this.x + 'px'
                     if (goX != this.x || goY != this.y) { //If the end pos is not equal to the go pos
                         this.object.style.backgroundColor = "transparent"
-                        throw new Error("oopies, move to position is not equal to end position")
+                        throw new Error("oopies, move to position is not equal to end position, loops: " + loop + ", Hunger: " + this.hunger + " goX:" + goX + " goY:" + goY + " X:" + this.x + " Y:" + this.y + " smallX:" + smallX + " smallY:" + smallY + " difference:" + difference + " gradient:" + gradient)
                     }
                 }
 
