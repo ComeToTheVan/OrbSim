@@ -94,6 +94,7 @@
                     const newOrb = document.createElement("div")
                     this.object = newOrb
                     newOrb.classList.add('Orb')
+                    newOrb.addEventListener("click", showInfomation(newOrb))
                     newOrb.id = ID
                     this.ID = ID
 
@@ -236,7 +237,13 @@
                         this.move(smallX, smallY)
                         this.lengthOfLife += MS
                         if (loop > 10000) {
-                            this.object.style.backgroundColor = "transparent"
+                            this.object.style.width = "200px"
+                            this.object.style.height = "200px"
+                            for (let i = 0; i < 30; i++) {
+                                this.object.style.backgroundColor = "rgb("+random(255)+","+random(255)+","+random(255)+")"
+                                await SLEEP(10)
+                            }
+                            this.object.remove()
                             throw new Error("loops: " + loop + ", Hunger: " + this.hunger + " goX:" + goX + " goY:" + goY + " X:" + this.x + " Y:" + this.y + " smallX:" + smallX + " smallY:" + smallY + " difference:" + difference + " gradient:" + gradient)
                         }
                         await this.deathCheck()
@@ -250,7 +257,13 @@
                     this.object.style.top = this.y + 'px' //set the pos again for the round above
                     this.object.style.left = this.x + 'px'
                     if (goX != this.x || goY != this.y) { //If the end pos is not equal to the go pos
-                        this.object.style.backgroundColor = "transparent"
+                        this.object.style.width = "200px"
+                        this.object.style.height = "200px"
+                        for (let i = 0; i < 30; i++) {
+                            this.object.style.backgroundColor = "rgb("+random(255)+","+random(255)+","+random(255)+")"
+                            await SLEEP(10)
+                        }
+                        this.object.remove()
                         throw new Error("oopies, move to position is not equal to end position, loops: " + loop + ", Hunger: " + this.hunger + " goX:" + goX + " goY:" + goY + " X:" + this.x + " Y:" + this.y + " smallX:" + smallX + " smallY:" + smallY + " difference:" + difference + " gradient:" + gradient)
                     }
                 }
@@ -312,6 +325,10 @@
                 food.add('Food'+foodAmount)
             }
 
+            function showInfomation(object) {
+                
+            }
+
             function debug() {
                 console.debug("Orbs:" + orbAmount + ", Foods:" + foodAmount)
             }
@@ -331,6 +348,7 @@
                 border-style: solid;
                 border-radius: 50%;
                 z-index: 5;
+                display: "none";
             }
             .Food {
                 position:absolute;
@@ -342,12 +360,18 @@
                 background-color: green;
                 border-radius: 40%;
                 text-align: center;
+                z-index: 1;
+                display: "block";
+            }
+            .Button {
+                display: "block";
+                z-index: 1;
             }
         </style>
     </head>
     <body>
-        <button id="start" onclick="spawnOrb()" style="z-index: 10;">spawn Orb</button>
-        <button id="start" onclick="spawnFood()" style="z-index: 10;">spawn Food</button>
-        <button id="debug" onclick="debug()" style="z-index: 10;">debug</button>
+        <button id="start" onclick="spawnOrb()" class="Button">spawn Orb</button>
+        <button id="start" onclick="spawnFood()" class="Button">spawn Food</button>
+        <button id="debug" onclick="debug()" class="Button">debug</button>
     </body>
 </html>
