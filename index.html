@@ -5,6 +5,7 @@
         <script>
             let begun = false
             let orbAmount = 0
+            let totalOrbAmount = 0
             let foodAmount = 0
 
             //settings
@@ -17,8 +18,8 @@
             const MAXSTATDIFFERENCE = 10
             const STARTINGFOODAMOUNT = 10 //amount of times food can be used before it go boom
             const MOVEMENTSPEED = 1 //in ms
-            const CLONESPEED = 3000 //in ms
-            const SLEEPLENGTH = 1000 //in ms
+            const CLONESPEED = 3000 //in sec
+            const SLEEPLENGTH = 3000 //in ms
 
             //needed functions
             const SLEEP = (ms) => new Promise(resolve => setTimeout(resolve, ms))
@@ -45,6 +46,7 @@
                     newObject.classList.add('Food')
                     newObject.id = ID
                     newObject.dataset.foodLeft = STARTINGFOODAMOUNT
+                    newObject.dataset.beingUsedBy = null
                     newObject.textContent = this.foodLeft
                     this.object = newObject
                     this.ID = ID    
@@ -68,6 +70,7 @@
                         if (this.foodLeft == 0) {
                             foodAmount--
                             this.object.remove()
+                            this.object = null
                             return
                         }
                         await SLEEP(10)
@@ -94,9 +97,11 @@
                     const newOrb = document.createElement("div")
                     this.object = newOrb
                     newOrb.classList.add('Orb')
-                    newOrb.addEventListener("click", showInfomation(newOrb))
                     newOrb.id = ID
                     this.ID = ID
+
+                    //so like js dont like this.var so like imma do smth bad... type shit
+                    newOrb.addEventListener("click", function() { showInfomation(newOrb, red, green, blue) })
 
                     //stat randomizer
                     let maxRed = 255
@@ -141,13 +146,14 @@
                     document.body.appendChild(newOrb)     
                 }
 
-                async creation() { //work on this
+                async creation() {
                     if (this.hunger <= 0 && orbAmount < MAXORBS) {
                         orbAmount++
+                        totalOrbAmount++
                         const ball = new Orb()
                         ball.x = this.x
                         ball.y = this.y
-                        await ball.add(this.ID, this.red, this.green, this.blue)
+                        await ball.add("Orb"+totalOrbAmount, this.red, this.green, this.blue)
                         ball.startLogic()
                     }
                 }
@@ -155,11 +161,22 @@
                 async startLogic() {
                     for (let i = 0; i < 100000; i++) {
                         //orb logic
+                        let ate = false
                         if (this.hunger >= HUNGERNEEDEDTOSEARCHFORFOOD) {
-                            if (await this.findFood()) {
-                                this.hunger = 0
-                                await SLEEP(CLONESPEED)
-                                await this.creation()
+                            let food = await this.findFood()
+                            if (food != 0) {
+                                if (food.dataset.beingUsedBy == this.object.id) {
+                                    this.hunger = 0
+                                    for (let i = CLONESPEED / 4; i != 0; i--) {
+                                        //AHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH if food is trying to be taken do smth
+                                        await SLEEP(1)
+                                    }    
+                                    await this.creation()
+                                    food.dataset.beingUsedBy = null
+                                    ate = true
+                                } else {
+                                    await this.moveTo(random(window.innerWidth - 75), random(window.innerHeight - 73), MOVEMENTSPEED)
+                                }
                             } else {
                                 await this.moveTo(random(window.innerWidth - 75), random(window.innerHeight - 73), MOVEMENTSPEED)
                             }
@@ -172,11 +189,10 @@
                             if (random(2) == 0) { //random chance to stop moving/sleep
                                 await SLEEP(SLEEPLENGTH)
                                 this.lengthOfLife += SLEEPLENGTH
-                            }
-                            
+                            }   
                         }
-                        this.hunger += random(MAXINCREASEHUNGER, MININCREASEHUNGER)
-                        this.deathCheck()
+                        this.hunger += (ate) ? 0 : random(MAXINCREASEHUNGER, MININCREASEHUNGER)
+                        if (this.deathCheck()) { return }
                     }
                 }
 
@@ -187,6 +203,7 @@
                         this.isDead = true
                         this.object.remove()
                         orbAmount--
+                        return true
                     }
                 }
 
@@ -293,27 +310,39 @@
 
                 async findFood() {
                     if (foodAmount == 0) {
-                        return false
+                        return 0
                     }
-                    const foods = document.getElementsByClassName("Food")
-                    const food = foods[random(foods.length)]
+                    let foods = document.getElementsByClassName("Food")
+                    let randomIndex = random(foods.length)
+                    let food = foods[randomIndex]
                     let goX = parseInt(food.style.left.substring(0, food.style.left.length - 2))
                     let goY = parseInt(food.style.top.substring(0, food.style.top.length - 2))
 
                     await this.moveTo(goX, goY, 1)
 
-                    if (food != null) {
-                        food.dataset.foodLeft--
-                        return true
+                    foods = document.getElementsByClassName("Food")
+                    food = foods[randomIndex]
+                    try {
+                        if (food.dataset.beingUsedBy == "null") { //make sure it is not being used
+                            food.dataset.foodLeft--
+                            food.dataset.beingUsedBy = this.object.id
+                            return food
+                        } else {
+                            return 0 //AHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH add combat
+                        }
+                    } catch (ex) {
+                        return 0
                     }
+                    return 0 //if no food 
                 }
             }
             
             function spawnOrb() {
                 if (orbAmount < MAXORBS) {
                     orbAmount++
+                    totalOrbAmount++
                     const ball = new Orb()
-                    ball.add("Orb"+orbAmount)
+                    ball.add("Orb"+totalOrbAmount)
 
                     ball.startLogic()
                 }
@@ -325,12 +354,20 @@
                 food.add('Food'+foodAmount)
             }
 
-            function showInfomation(object) {
-                
+            function showInfomation(object, red, green, blue) {
+                document.getElementById("infoShower").style.visibility = "visible"
+                document.getElementById("info0").innerHTML = "ID:" + object.id
+                document.getElementById("info1").innerHTML = "Red:" + red
+                document.getElementById("info2").innerHTML = "Green:" + green
+                document.getElementById("info3").innerHTML = "Blue:" + blue
+            }
+
+            function Exit() {
+                document.getElementById("infoShower").style.visibility = "hidden"
             }
 
             function debug() {
-                console.debug("Orbs:" + orbAmount + ", Foods:" + foodAmount)
+                console.debug("Orbs:" + orbAmount + " Spawned Orbs:" + totalOrbAmount + ", Foods:" + foodAmount)
             }
         </script>
 
@@ -347,7 +384,7 @@
                 border-width: 4px;
                 border-style: solid;
                 border-radius: 50%;
-                z-index: 5;
+                z-index: 1;
                 display: "none";
             }
             .Food {
@@ -360,18 +397,43 @@
                 background-color: green;
                 border-radius: 40%;
                 text-align: center;
-                z-index: 1;
+                z-index: 2;
                 display: "block";
             }
             .Button {
+                position: absolute;
                 display: "block";
-                z-index: 1;
+                z-index: 3;
+            }
+            .Overlay {
+                width: 120px;
+                height: 190px;
+                position: absolute;
+                display: block;
+                z-index: 3;
+                top: 50px;
+                border-radius: 10%;
+                visibility: hidden;
+                background-color: rgb(84, 113, 113);
+            }
+            .OverlayText {
+                position: relative;
+                top: -30px;
+                left: 10px;
             }
         </style>
     </head>
     <body>
-        <button id="start" onclick="spawnOrb()" class="Button">spawn Orb</button>
-        <button id="start" onclick="spawnFood()" class="Button">spawn Food</button>
-        <button id="debug" onclick="debug()" class="Button">debug</button>
+        <button id="start" onclick="spawnOrb()" class="Button" style="left: 0px;">spawn Orb</button>
+        <button id="start" onclick="spawnFood()" class="Button" style="left: 80px;">spawn Food</button>
+        <button id="debug" onclick="debug()" class="Button" style="left: 168px;">debug</button>
+        <div id="infoShower" class="Overlay">
+            <button style="position: relative; left: 100px; height: 30px;" onclick="Exit()">x</button>
+            <p id="info0" class="OverlayText">info0:</p>
+            <p id="info1" class="OverlayText">info1:</p>
+            <p id="info2" class="OverlayText">info2:</p>
+            <p id="info3" class="OverlayText">info3:</p>
+            <p id="info4" class="OverlayText">info4:</p>
+        </div>
     </body>
 </html>
