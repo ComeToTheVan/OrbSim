@@ -33,7 +33,7 @@
                 if (maxAmount > minAmount) {
                     let amount = maxAmount - minAmount
                     return Math.floor(Math.random() * amount) + minAmount
-                } else if (maxAmount = minAmount) {
+                } else if (maxAmount == minAmount) {
                     return maxAmount
                 } else {
                     throw new Error("random() min: " + minAmount + " is larger than max: " + maxAmount)
@@ -127,14 +127,18 @@
                         let maxBlue = 255
                         let minBlue = 0
 
-                        let attackBias = fights
-                        let defenceBias = defends
-                        let blueBias = MAXSTATDIFFERENCE - (fights + defends)
+                        let attackBias = parseInt(fights)
+                        let defenceBias = parseInt(defends)
+                        let blueBias = MAXSTATDIFFERENCE - (attackBias + defenceBias)
+                        blueBias = (blueBias < 0) ? 0 : blueBias
                         if (attackBias + defenceBias != TOTALSTATBIAS) { //if total bias is not equal to tsb, contiune
-                            let mutiplyer = (attackBias + defenceBias) / TOTALSTATBIAS //fine the multiplyer needed to bring total to tsb
-                            attackBias *= mutiplyer //multiply ab and db by the multiplyer
-                            defenceBias *= mutiplyer
+                            let mutiplyer = TOTALSTATBIAS / (attackBias + defenceBias) //fine the multiplyer needed to bring total to tsb
+                            if (mutiplyer != Infinity) {
+                                attackBias = Math.round(attackBias * mutiplyer) //multiply ab and db by the multiplyer
+                                defenceBias = Math.round(defenceBias * mutiplyer)
+                            }
                         }
+
                         if (attackBias == 0 && defenceBias == 0) {
                             attackBias = 1
                             defenceBias = 1
@@ -147,6 +151,9 @@
                             minRed = red - defenceBias
                             
                             minRed = minRed < 0 ? 0 : minRed
+                            minRed = minRed > 255 ? 255 : minRed
+
+                            maxRed = maxRed < 0 ? 0 : maxRed
                             maxRed = maxRed > 255 ? 255 : maxRed
                             
                         }
@@ -156,6 +163,9 @@
                             minGreen = green - attackBias
 
                             minGreen = minGreen < 0 ? 0 : minGreen
+                            minGreen = minGreen > 255 ? 255 : minGreen
+
+                            maxGreen = maxGreen < 0 ? 0 : maxGreen
                             maxGreen = maxGreen > 255 ? 255 : maxGreen
                         }
                         if (blue != -1) {
@@ -163,8 +173,12 @@
                             minBlue = blue - MAXSTATDIFFERENCE
                             
                             minBlue = minBlue < 0 ? 0 : minBlue
+                            minBlue = minBlue > 255 ? 255 : minBlue
+
+                            maxBlue = maxBlue < 0 ? 0 : maxBlue
                             maxBlue = maxBlue > 255 ? 255 : maxBlue
                         }
+                        console.log(" minRed:" + minRed + " maxRed:" + maxRed + " minGreen:" + minGreen + " maxGreen:" + maxGreen + " Blue:" + blue + " BlueBias:" + blueBias + " minBlue:" + minBlue + " maxBlue:" + maxBlue + " attackBias:" + attackBias + " defenceBias:" + defenceBias)
 
                         red = random(maxRed, minRed) //random the 'stats' of the orb
                         green = random(maxGreen, minGreen) 
@@ -174,15 +188,6 @@
                         green = BASEDEFENCE
                         blue = 0    
                     }
-
-                    // red = red < 0 ? 0 : red //making sure it dont go over or under the limit
-                    // red = red > 255 ? 255 : red
-
-                    // green = green < 0 ? 0 : green
-                    // green = green > 255 ? 255 : green
-
-                    // blue = blue < 0 ? 0 : blue
-                    // blue = blue > 255 ? 255 : blue
 
                     red = Math.round(red)
                     green = Math.round(red)
