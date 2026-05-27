@@ -18,7 +18,7 @@
             const STARTINGFOODAMOUNT = 0 //amount of times food can be used before it go boom, 0 is unlimited
             const MOVEMENTSPEED = 1 //in ms
             const CLONESPEED = 3000 //in sec
-            const SLEEPLENGTH = 1000 //in ms
+            const SLEEPLENGTH = 1 //in ms
 
             const MAXSTATDIFFERENCE = 5 //only for blue colour rn
             const RICHNESS = 20 //when no fight or defends, set blue bias to this
@@ -26,6 +26,7 @@
             const BASEATTACK = 0 //Is equal to red rgb
             const BASEDEFENCE = 0 //Is equal to green rgb
             const BASEHEALTH = 10
+            
             //needed functions
             const SLEEP = (ms) => new Promise(resolve => setTimeout(resolve, ms))
             function random(maxAmount, minAmount = 0) {
@@ -142,15 +143,27 @@
 
                         if (red != -1) { //set up min and max
                             maxRed = red + attackBias
-                            minRed = red - (defenceBias + (Math.floor(attackBias / 2)))
+                            // minRed = red - (defenceBias + (Math.floor(attackBias / 2)))
+                            minRed = red - defenceBias
+                            
+                            minRed = minRed < 0 ? 0 : minRed
+                            maxRed = maxRed > 255 ? 255 : maxRed
+                            
                         }
                         if (green != -1) {
                             maxGreen = green + defenceBias
-                            minGreen = green - (attackBias + (Math.floor(defenceBias / 2)))
+                            // minGreen = green - (attackBias + (Math.floor(defenceBias / 2)))
+                            minGreen = green - attackBias
+
+                            minGreen = minGreen < 0 ? 0 : minGreen
+                            maxGreen = maxGreen > 255 ? 255 : maxGreen
                         }
                         if (blue != -1) {
                             maxBlue = blue + blueBias
                             minBlue = blue - MAXSTATDIFFERENCE
+                            
+                            minBlue = minBlue < 0 ? 0 : minBlue
+                            maxBlue = maxBlue > 255 ? 255 : maxBlue
                         }
 
                         red = random(maxRed, minRed) //random the 'stats' of the orb
@@ -162,15 +175,19 @@
                         blue = 0    
                     }
 
-                    red = red < 0 ? 0 : red //making sure it dont go over or under the limit
-                    red = red > 255 ? 255 : red
+                    // red = red < 0 ? 0 : red //making sure it dont go over or under the limit
+                    // red = red > 255 ? 255 : red
 
-                    green = green < 0 ? 0 : green
-                    green = green > 255 ? 255 : green
+                    // green = green < 0 ? 0 : green
+                    // green = green > 255 ? 255 : green
 
-                    blue = blue < 0 ? 0 : blue
-                    blue = blue > 255 ? 255 : blue
+                    // blue = blue < 0 ? 0 : blue
+                    // blue = blue > 255 ? 255 : blue
 
+                    red = Math.round(red)
+                    green = Math.round(red)
+                    blue = Math.round(red)
+                    
                     this.red = red
                     this.green = green
                     this.blue = blue
@@ -362,9 +379,8 @@
                                 if (this.object.dataset.attack > document.getElementById(food.dataset.beingUsedBy).dataset.defence) {
                                     let currentDefence = document.getElementById(food.dataset.beingUsedBy).dataset.defence
                                     let currentAttack = this.object.dataset.attack
-                                    if (currentAttack > currentDefence) {
-                                        document.getElementById(food.dataset.beingUsedBy).dataset.healthPoints -= (currentAttack - currentDefence)
-                                    }                                    
+
+                                    document.getElementById(food.dataset.beingUsedBy).dataset.healthPoints -= (currentAttack - currentDefence)                               
 
                                     document.getElementById(food.dataset.beingUsedBy).dataset.timesDefend++
                                     document.getElementById(food.dataset.beingUsedBy).dataset.defence++
