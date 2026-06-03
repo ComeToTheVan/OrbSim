@@ -1,6 +1,9 @@
 <html>
     <head>
+        <meta charset="UTF-8">
+
         <title>Orb sim</title>
+        <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1NzYgNTEyIiBmaWxsPSIjMWE3M2U4Ij48cGF0aCBkPSJNMjg4IDMyYy04MC44IDAtMTQ1LjUgMzYuOC0xOTIuNiA4MC42QzQ4LjYgMTU2IDE3LjMgMjA4IDIuNSAyNDMuN2MtMy4zIDcuOS0zLjMgMTYuNyAwIDI0LjZDMTcuMyAzMDQgNDguNiAzNTYgOTUuNCAzOTkuNEMxNDIuNSA0NDMuMiAyMDcuMiA0ODAgMjg4IDQ4MHMxNDUuNS0zNi44IDE5Mi42LTgwLjZjNDYuOC00My40IDc4LjEtOTUuNCA5My0xMzEuMWMzLjMtNy45IDMuMy0xNi43IDAtMjQuNmMtMTQuOS0zNS43LTQ2LjItODcuNy05My0xMzEuMUM0MzMuNSA2OC44IDM2OC44IDMyIDI4OCAzMnpNMTQ0IDI1NmExNDQgMTQ0IDAgMSAxIDI4OCAwIDE0NCAxNDQgMCAxIDEgLTI4OCAwem0xNDQtNjRjMCAzNS4zLTI4LjcgNjQtNjQgNjRjLTcuMSAwLTEzLjktMS4yLTIwLjMtMy4zYzUuNS0xMS4yIDguMy0yMy40IDguMy0zNS43YzAtNDQuMi0zNS44LTgwLTgwLTgwYy0xMi4zIDAtMjQuNSAyLjgtMzUuNyA4LjNDMTAwLjIgMTM4LjEgOTkgMTQ0LjkgOTkgMTUyYzAgMzUuMyAyOC43IDY0IDY0IDY0YzM1LjMgMCA2NC0yOC43IDY0LTY0YzAtMzUuMy0yOC43LTY0LTY0LTY0Yy03LjEgMC0xMy45IDEuMi0yMC4zIDMuM2M1LjUtMTEuMiA4LjMtMjMuNCA4LjMtMzUuN2MwLTEyLjMtMi44LTI0LjUtOC4zLTM1LjdDMTQ5LjkgNTAuMiAxNTYuNyA0OSAxNjMuOCA0OWM0NC4yIDAgODAgMzUuOCA4MCA4MGMwIDEyLjMtMi44IDI0LjUtOC4zIDM1LjdDMjQxLjEgMTYxLjkgMjQyLjIgMTU4LjcgMjQyLjIgMTUyYzAtMzUuMy0yOC43LTY0LTY0LTY0eiIvPjwvc3ZnPg==">
 
         <script>
             let begun = false
@@ -9,23 +12,24 @@
             let foodAmount = 0
 
             //settings
-            const MAXDEATHTIMER = 20 //in sec
-            const MAXINCREASEHUNGER = 40
-            const MININCREASEHUNGER = 20
-            const HUNGERNEEDEDTOSEARCHFORFOOD = 20 //when this is reached it will clone
-            const HUNGERDEATHAMOUNT = 150 //when this is reached, death
-            const MAXORBS = 250 //once this is hit they will stop spawning
-            const STARTINGFOODAMOUNT = 0 //amount of times food can be used before it go boom, 0 is unlimited
-            const MOVEMENTSPEED = 1 //in ms
-            const CLONESPEED = 3000 //in sec
-            const SLEEPLENGTH = 1 //in ms
+            const MAXDEATHTIMER = 20 //in sec (20)
+            const HUNGERNEEDEDTOSEARCHFORFOOD = 9 //when this is reached it will clone, in sec (9)
+            const HUNGERDEATHAMOUNT = 15 //when this is reached, death, in sec (15)
+            const MAXORBS = 250 //once this is hit they will stop spawning (250)
+            const STARTINGFOODAMOUNT = 0 //amount of times food can be used before it go boom, 0 is unlimited (10)
+            const MOVEMENTSPEED = 1 //in ms (1)
+            const CLONESPEED = 3 //in sec (3)
+            const SLEEPLENGTH = 1 //in sec (1)
 
-            const MAXSTATDIFFERENCE = 5 //only for blue colour rn
-            const RICHNESS = 20 //when no fight or defends, set blue bias to this
-            const TOTALSTATBIAS = 15 //the amount that the stats can change in total
-            const BASEATTACK = 0 //Is equal to red rgb
-            const BASEDEFENCE = 0 //Is equal to green rgb
-            const BASEHEALTH = 10
+            const MAXSTATDIFFERENCE = 5 //only for blue colour rn (5)
+            const RICHNESS = 20 //when no fight or defends, set blue bias to this (20)
+            const TOTALSTATBIAS = 15 //the amount that the stats can change in total (15)
+            const BASEATTACK = 0 //Is equal to red rgb (0)
+            const BASEDEFENCE = 0 //Is equal to green rgb (0)
+            const BASEHEALTH = 10 //(10)
+
+            const PIXELSPERCYCLE = 1 //should be set to 1 unless death on wrong movement is set to false (1)
+            const DEATHONWRONGMOVE = true //(true)
             
             //needed functions
             const SLEEP = (ms) => new Promise(resolve => setTimeout(resolve, ms))
@@ -91,18 +95,18 @@
             }
 
             class Orb {
-                constructor(ID, ogID, object, x, y, hunger, isDead, lengthOfLife, red, green, blue) { // put needed to set things before object
+                constructor(ID, ogID, object, x, y, hunger, lengthOfLife, red, green, blue, hasDied) { // put needed to set things before object
                     this.ID = ID
                     this.ogID = ID
                     this.object = object
                     this.x = 0
                     this.y = 0
                     this.hunger = 1
-                    this.isDead = false
                     this.lengthOfLife = 0
                     this.red = red //attack
                     this.green = green //defence
                     this.blue = blue
+                    this.hasDied = false
                 }
 
                 add(ID, ogID = ID, red = -1, green = -1, blue = -1, fights = 0, defends = 0) { //should only be called once per orb
@@ -147,8 +151,8 @@
 
                         if (red != -1) { //set up min and max
                             maxRed = red + attackBias
-                            // minRed = red - (defenceBias + (Math.floor(attackBias / 2)))
-                            minRed = red - defenceBias
+                            minRed = red - (defenceBias + (Math.floor(attackBias / 2)))
+                            // minRed = red - defenceBias
                             
                             minRed = minRed < 0 ? 0 : minRed
                             minRed = minRed > 255 ? 255 : minRed
@@ -159,8 +163,8 @@
                         }
                         if (green != -1) {
                             maxGreen = green + defenceBias
-                            // minGreen = green - (attackBias + (Math.floor(defenceBias / 2)))
-                            minGreen = green - attackBias
+                            minGreen = green - (attackBias + (Math.floor(defenceBias / 2)))
+                            // minGreen = green - attackBias
 
                             minGreen = minGreen < 0 ? 0 : minGreen
                             minGreen = minGreen > 255 ? 255 : minGreen
@@ -178,7 +182,6 @@
                             maxBlue = maxBlue < 0 ? 0 : maxBlue
                             maxBlue = maxBlue > 255 ? 255 : maxBlue
                         }
-                        console.log(" minRed:" + minRed + " maxRed:" + maxRed + " minGreen:" + minGreen + " maxGreen:" + maxGreen + " Blue:" + blue + " BlueBias:" + blueBias + " minBlue:" + minBlue + " maxBlue:" + maxBlue + " attackBias:" + attackBias + " defenceBias:" + defenceBias)
 
                         red = random(maxRed, minRed) //random the 'stats' of the orb
                         green = random(maxGreen, minGreen) 
@@ -190,8 +193,8 @@
                     }
 
                     red = Math.round(red)
-                    green = Math.round(red)
-                    blue = Math.round(red)
+                    green = Math.round(green)
+                    blue = Math.round(blue)
                     
                     this.red = red
                     this.green = green
@@ -204,6 +207,7 @@
                     newOrb.dataset.timesAttack = 0
                     newOrb.dataset.timesDefend = 0
                     newOrb.dataset.healthPoints = BASEHEALTH
+                    newOrb.dataset.isDead = false
 
                     //append the child(orb)
                     document.body.appendChild(newOrb)     
@@ -216,8 +220,8 @@
                         const ball = new Orb()
                         ball.x = this.x
                         ball.y = this.y
-                        // await ball.add("Orb"+totalOrbAmount, this.ogID, this.red, this.green, this.blue)
                         await ball.add("Orb"+totalOrbAmount, this.ogID, this.red, this.green, this.blue, this.object.dataset.timesAttack, this.object.dataset.timesDefend)
+                        await ball.move(0, 0)
                         ball.startLogic()
                     }
                 }
@@ -225,14 +229,13 @@
                 async startLogic() {
                     for (let i = 0; i < 100000; i++) {
                         //orb logic
-                        let ate = false
-                        if (this.hunger >= HUNGERNEEDEDTOSEARCHFORFOOD) {
+                        if (this.hunger >= HUNGERNEEDEDTOSEARCHFORFOOD * 250) {
                             let food = await this.findFood()
                             if (food != 0) {
                                 if (food.dataset.beingUsedBy == this.object.id) {
                                     this.hunger = 0
                                     let successful = true
-                                    for (let i = CLONESPEED / 4; i != 0; i--) {
+                                    for (let i = CLONESPEED * 250; i != 0; i--) { //this works, don worry gng
                                         if (food.dataset.beingUsedBy == this.object.id) {
                                             await SLEEP(1)
                                         } else {
@@ -240,10 +243,10 @@
                                             break
                                         }
                                     }
-                                    if (successful) { 
+                                    if (await this.deathCheck()) { return }
+                                    else if (successful && orbAmount > MAXORBS) { 
                                         await this.creation() 
                                         food.dataset.beingUsedBy = null
-                                        ate = true
                                     }
                                 } else {
                                     await this.moveTo(random(window.innerWidth - 75), random(window.innerHeight - 73), MOVEMENTSPEED)
@@ -252,39 +255,48 @@
                                 await this.moveTo(random(window.innerWidth - 75), random(window.innerHeight - 73), MOVEMENTSPEED)
                             }
                         } else {
-                            await this.moveTo(random(window.innerWidth - 75), random(window.innerHeight - 73), MOVEMENTSPEED)
-                            
-                            if (deathCheck()) {
-                                return
+                            if (random(4) != 0) { //random chance to stop moving/sleep
+                                await this.moveTo(random(window.innerWidth - 75), random(window.innerHeight - 73), MOVEMENTSPEED)
+                            } else {
+                                for (let i = SLEEPLENGTH * 250; i != 0; i--){
+                                    await SLEEP(1)
+                                    this.lengthOfLife += SLEEPLENGTH
+                                    if (await this.deathCheck()) { return }
+                                }
+                                
                             }
-                            if (random(2) == 0) { //random chance to stop moving/sleep
-                                await SLEEP(SLEEPLENGTH)
-                                this.lengthOfLife += SLEEPLENGTH
-                            }   
                         }
-                        this.hunger += (ate) ? 0 : random(MAXINCREASEHUNGER, MININCREASEHUNGER)
-                        if (this.deathCheck()) { return }
+                        if (await this.deathCheck()) { return }
                     }
                 }
 
                 deathCheck() {
-                    if (this.lengthOfLife >= MAXDEATHTIMER * 1000 || this.hunger >= HUNGERDEATHAMOUNT || this.object.dataset.healthPoints <= 0 || this.object == undefined || this.idDead) {
-                        this.lengthOfLife = 0
-                        console.log("noooo, he dead")
-                        this.isDead = true
+                    if ((this.lengthOfLife >= MAXDEATHTIMER * 250 || this.object.dataset.isDead == true) && !this.hasDied) {
+                        this.hasDied = true
                         this.object.remove()
-                        this.object = null
+                        orbAmount--
+                        return true
+                    } else if ((this.hunger >= HUNGERDEATHAMOUNT * 250 || this.object.dataset.healthPoints <= 0) && !this.hasDied) {
+                        this.hasDied = true
+                        this.object.dataset.isDead = true
+                        this.object.remove()
                         orbAmount--
                         return true
                     }
                 }
 
                 move(Xpx, Ypx) {
-                    this.y += Ypx
-                    this.x += Xpx
+                    try {
+                        this.y += Ypx
+                        this.x += Xpx
 
-                    this.object.style.top = this.y + 'px'
-                    this.object.style.left = this.x + 'px'
+                        this.object.style.top = this.y + 'px'
+                        this.object.style.left = this.x + 'px'
+
+                        return true
+                    } catch {
+                        return false
+                    }
                 }
 
                 async moveTo(goX, goY, MS) {
@@ -296,11 +308,14 @@
                     if (goX == this.x && goY == this.y) { //just in case it is where it needs to go
                         return
                     }
-                    
-                    let gradient = (this.y - goY)/(this.x - goX) //gradient finding
-                    let smallY = gradient
-                    let smallX = 1
-                    let difference = Math.abs(goX - this.x) //positive value of the difference
+
+                    let newGoX = Math.abs(goX - this.x)
+                    let newGoY = Math.abs(goY - this.y)
+
+                    let divAmount = newGoX + newGoY
+
+                    let smallX = (newGoX * PIXELSPERCYCLE) / divAmount
+                    let smallY = (newGoY * PIXELSPERCYCLE) / divAmount
 
                     if (goX < this.x) { //check if it needs to go left and not right
                         smallX = Math.abs(smallX) * -1
@@ -309,52 +324,25 @@
                     if (goY < this.y) { //same above but for smallY
                         smallY = Math.abs(smallY) * -1
                     }
-                    else {
-                        smallY = Math.abs(smallY)
-                    }
-                    if (Math.floor(smallY) > 2 || Math.floor(smallY) < -2) { 
-                        let digits = Math.floor(smallY).toString().length
-                        for (let i = 0; i < digits--; i++) {
-                            smallY /= 10
-                            smallX /= 10
-                            difference *= 10
-                        }
-                    }       
 
-                    let divAmount = goX + goY
-                    let goXM = goY / divAmount
-                    let goYM = goX / divAmount
-                    smallY = goXM
-                    smallX = goYM
-
-                    while (loop < divAmount) {
+                    while (loop < Math.round(divAmount / PIXELSPERCYCLE)) { //loop
                         loop++
-                        this.move(smallX, smallY)
+                        await this.move(smallX, smallY)
                         this.lengthOfLife += MS
-                        if (loop > 10000) {
-                            this.object.style.width = "200px"
-                            this.object.style.height = "200px"
-                            for (let i = 0; i < 30; i++) {
-                                this.object.style.backgroundColor = "rgb("+random(255)+","+random(255)+","+random(255)+")"
-                                await SLEEP(10)
-                            }
-                            this.object.remove()
-                            document.getElementById("debug").innerHTML = "loops: " + loop + ", Hunger: " + this.hunger + " goX:" + goX + " goY:" + goY + " X:" + this.x + " Y:" + this.y + " smallX:" + smallX + " smallY:" + smallY + " difference:" + difference + " div:" + div
-                            
-                            throw new Error("loops: " + loop + ", Hunger: " + this.hunger + " goX:" + goX + " goY:" + goY + " X:" + this.x + " Y:" + this.y + " smallX:" + smallX + " smallY:" + smallY + " difference:" + difference + " gradient:" + gradient)
-                        }
-                        await this.deathCheck()
-                        if (this.isDead) {
-                            return
-                        }
+
+                        this.hunger += MS
+
+                        if (await this.deathCheck()) { return }
+                        
                         await SLEEP(MS)
                     }
+
                     this.x = Math.round(this.x) //just in case the num is like 835.0000000000001 or smth
                     this.y = Math.round(this.y)
                     this.object.style.top = this.y + 'px' //set the pos again for the round above
                     this.object.style.left = this.x + 'px'
                     
-                    if (goX != this.x || goY != this.y) { //If the end pos is not equal to the go pos
+                    if ((goX != this.x || goY != this.y) && DEATHONWRONGMOVE) { //If the end pos is not equal to the go pos
                         this.object.style.width = "200px"
                         this.object.style.height = "200px"
                         for (let i = 0; i < 30; i++) {
@@ -363,10 +351,29 @@
                         }
                         this.object.remove()
                         this.deathCheck()
-                        document.getElementById("debug").innerHTML = "loops: " + loop + ", Hunger: " + this.hunger + " goX:" + goX + " goY:" + goY + " X:" + this.x + " Y:" + this.y + " smallX:" + smallX + " smallY:" + smallY + " difference:" + difference + " div:" + div + " goXM:" + goXM + " goYM:" + goYM
-                        
-                        throw new Error("oopies, move to position is not equal to end position, loops: " + loop + ", Hunger: " + this.hunger + " goX:" + goX + " goY:" + goY + " X:" + this.x + " Y:" + this.y + " smallX:" + smallX + " smallY:" + smallY + " gradient:" + gradient)
+
+                        throw new Error("oopies, move to position, (x:" + goX + ", y:" + goY + ") is not equal to end position, (x:" + this.x + " y:" + this.y + ")")
                     }
+                }
+
+                findClosest(array) { //takes an array of objects
+                    let smallestDistance = Infinity //set the vars
+                    let closestObject = null
+
+                    for (let i = 0; i < array.length; i++) { //loop for each object in the array
+                        let object = array[i] 
+
+                        let x = parseInt(object.style.left.substring(0, object.style.left.length - 2)) //remove the px from the pos
+                        let y = parseInt(object.style.top.substring(0, object.style.top.length - 2))
+
+                        let distance = Math.sqrt(((x - this.x)**2) + ((y - this.y)**2)) //find the distance between the two points(trust me bro, i do math)
+
+                        if (distance < smallestDistance) { //check if distance is smaller than the current biggest
+                            smallestDistance = distance //set min distance
+                            closestObject = array[i] //set closest object to the closest
+                        }
+                    }
+                    return closestObject
                 }
 
                 async findFood() {
@@ -375,66 +382,66 @@
                     }
                     let foods = document.getElementsByClassName("Food")
                     let randomIndex = random(foods.length)
-                    let food = foods[randomIndex]
+                    let food = await this.findClosest(foods)
+
                     let goX = parseInt(food.style.left.substring(0, food.style.left.length - 2)) //remove the px from the pos
                     let goY = parseInt(food.style.top.substring(0, food.style.top.length - 2))
 
                     await this.moveTo(goX, goY, 1)
 
                     foods = document.getElementsByClassName("Food")
-                    let newFood = foods[randomIndex]
-                    if (food == newFood) {  
-                        try {
-                            if (food.dataset.beingUsedBy == "null") { //make sure it is not being used
-                                food.dataset.foodLeft--
-                                food.dataset.beingUsedBy = this.object.id
+                    let newFood = await this.findClosest(foods)
+                    try { //if food does not exist
+                        if (food.dataset.beingUsedBy == "null") { //if it is not being used
+                            food.dataset.foodLeft-- //reduce the amount of food in the object
+                            food.dataset.beingUsedBy = this.object.id //set used by to itself
+                            return food //return the food object
+                        } else { //if it is being used
+                            this.object.dataset.timesAttack++ //times attack go up for this.object
+                            document.getElementById(food.dataset.beingUsedBy).dataset.timesDefend++ //times defended goes up for current user
+
+                            let currentDefence = parseInt(document.getElementById(food.dataset.beingUsedBy).dataset.defence) //get current defence + attack
+                            let currentAttack = parseInt(this.object.dataset.attack)
+
+                            if (currentAttack > currentDefence) { //check to see if attack was successful
+
+                                document.getElementById(food.dataset.beingUsedBy).dataset.healthPoints -= (currentAttack - currentDefence) //minus hp from defender                           
+
+                                document.getElementById(food.dataset.beingUsedBy).dataset.timesDefend++ //increase times attacked
+                                document.getElementById(food.dataset.beingUsedBy).dataset.defence++ //increase defence stat
+
+                                food.dataset.foodLeft-- //remove another food
+                                food.dataset.beingUsedBy = this.object.id //change the current user to itself
                                 return food
-                            } else { 
-                                this.object.dataset.timesAttack++
-                                document.getElementById(food.dataset.beingUsedBy).dataset.timesDefend++
+                            } else {
+                                this.object.dataset.healthPoints -= (currentDefence - currentAttack) //minus hp from attacker
 
-                                if (this.object.dataset.attack > document.getElementById(food.dataset.beingUsedBy).dataset.defence) {
-                                    let currentDefence = document.getElementById(food.dataset.beingUsedBy).dataset.defence
-                                    let currentAttack = this.object.dataset.attack
-
-                                    document.getElementById(food.dataset.beingUsedBy).dataset.healthPoints -= (currentAttack - currentDefence)                               
-
-                                    document.getElementById(food.dataset.beingUsedBy).dataset.timesDefend++
-                                    document.getElementById(food.dataset.beingUsedBy).dataset.defence++
-
-                                    food.dataset.foodLeft--
-                                    food.dataset.beingUsedBy = this.object.id
-                                    return food
-                                } else {
-                                    this.object.dataset.attack++
-                                    this.object.dataset.timesAttack++
-                                    return 0
-                                }
+                                this.object.dataset.attack++ //incrase attack stat
+                                this.object.dataset.timesAttack++ //increase times attacked
+                                return 0 //return 'no food'
                             }
-                        } catch (ex) {
-                            return 0
                         }
+                    } catch {
+                        return 0 //return 'no food'
                     }
-                    return 0 //if no food 
                 }
             }
             
-            function spawnOrb() {
-                if (orbAmount < MAXORBS) {
-                    orbAmount++
-                    totalOrbAmount++
-                    const ball = new Orb()
-                    ball.add("Orb"+totalOrbAmount)
+            async function spawnOrb() {
+                if (orbAmount < MAXORBS) { //check if to many orbs
+                    orbAmount++ //add an orb
+                    totalOrbAmount++ //add for Id orbs
+                    const ball = new Orb() //create new orb
+                    await ball.add("Orb"+totalOrbAmount) //call the add function
 
-                    ball.startLogic()
+                    ball.startLogic() //start the logic
                 }
             }
 
             function clearOrbs() {
-                const orbs = document.getElementsByClassName("Orb")
-                for (let i = orbs.length - 1; i >= 0; i--) {
-                    orbs[i].remove()
-                    orbAmount--
+                const orbs = document.getElementsByClassName("Orb") //get all orbs
+                for (let i = orbs.length - 1; i >= 0; i--) { //reverse for loop cause doing it forward is to slow
+                    orbs[i].dataset.isDead = true //set is dead to true
                 }   
             }
 
@@ -479,13 +486,11 @@
                 width: 70px;
                 height: 70px;
                 transform-origin: 50% 50%; /* half of width and height */
-                background-color: red;
                 border-color: black;
                 border-width: 4px;
                 border-style: solid;
                 border-radius: 50%;
                 z-index: 1;
-                display: "none";
             }
             .Food {
                 position:absolute;
@@ -498,11 +503,9 @@
                 border-radius: 40%;
                 text-align: center;
                 z-index: 2;
-                display: "block";
             }
             .Button {
                 position: absolute;
-                display: "block";
                 z-index: 3;
             }
             .Overlay {
@@ -528,7 +531,7 @@
         <button id="clearFood" onclick="clearOrbs()" class="Button" style="left: 4px; top: 32px">clear Orbs</button>
         <button id="addFood" onclick="spawnFood()" class="Button" style="left: 80px;">spawn Food</button>
         <button id="clearFood" onclick="clearFood()" class="Button" style="left: 80px; top: 32px">clear Food</button>
-        <p id="debug" style="position: absolute; top: 50px">debug text</p>
+        <p id="debug" style="position: absolute; top: 50px; visibility: hidden;">debug text</p>
         <div id="infoShower" class="Overlay">
             <button style="position: relative; left: 100px; height: 30px;" onclick="Exit()">x</button>
             <p id="info0" class="OverlayText" style="top: 0;">info0:</p>
