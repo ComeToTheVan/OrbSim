@@ -254,8 +254,8 @@
                         } else {
                             await this.moveTo(random(window.innerWidth - 75), random(window.innerHeight - 73), MOVEMENTSPEED)
                             
-                            if (this.isDead) {
-                                break
+                            if (deathCheck()) {
+                                return
                             }
                             if (random(2) == 0) { //random chance to stop moving/sleep
                                 await SLEEP(SLEEPLENGTH)
@@ -268,7 +268,7 @@
                 }
 
                 deathCheck() {
-                    if (this.lengthOfLife >= MAXDEATHTIMER * 1000 || this.hunger >= HUNGERDEATHAMOUNT || this.object.dataset.healthPoints <= 0 || this.object == undefined) {
+                    if (this.lengthOfLife >= MAXDEATHTIMER * 1000 || this.hunger >= HUNGERDEATHAMOUNT || this.object.dataset.healthPoints <= 0 || this.object == undefined || this.idDead) {
                         this.lengthOfLife = 0
                         console.log("noooo, he dead")
                         this.isDead = true
@@ -319,9 +319,15 @@
                             smallX /= 10
                             difference *= 10
                         }
-                    }           
+                    }       
 
-                    while (loop < difference) {
+                    let divAmount = goX + goY
+                    let goXM = goY / divAmount
+                    let goYM = goX / divAmount
+                    smallY = goXM
+                    smallX = goYM
+
+                    while (loop < divAmount) {
                         loop++
                         this.move(smallX, smallY)
                         this.lengthOfLife += MS
@@ -333,6 +339,8 @@
                                 await SLEEP(10)
                             }
                             this.object.remove()
+                            document.getElementById("debug").innerHTML = "loops: " + loop + ", Hunger: " + this.hunger + " goX:" + goX + " goY:" + goY + " X:" + this.x + " Y:" + this.y + " smallX:" + smallX + " smallY:" + smallY + " difference:" + difference + " div:" + div
+                            
                             throw new Error("loops: " + loop + ", Hunger: " + this.hunger + " goX:" + goX + " goY:" + goY + " X:" + this.x + " Y:" + this.y + " smallX:" + smallX + " smallY:" + smallY + " difference:" + difference + " gradient:" + gradient)
                         }
                         await this.deathCheck()
@@ -345,6 +353,7 @@
                     this.y = Math.round(this.y)
                     this.object.style.top = this.y + 'px' //set the pos again for the round above
                     this.object.style.left = this.x + 'px'
+                    
                     if (goX != this.x || goY != this.y) { //If the end pos is not equal to the go pos
                         this.object.style.width = "200px"
                         this.object.style.height = "200px"
@@ -353,7 +362,10 @@
                             await SLEEP(10)
                         }
                         this.object.remove()
-                        throw new Error("oopies, move to position is not equal to end position, loops: " + loop + ", Hunger: " + this.hunger + " goX:" + goX + " goY:" + goY + " X:" + this.x + " Y:" + this.y + " smallX:" + smallX + " smallY:" + smallY + " difference:" + difference + " gradient:" + gradient)
+                        this.deathCheck()
+                        document.getElementById("debug").innerHTML = "loops: " + loop + ", Hunger: " + this.hunger + " goX:" + goX + " goY:" + goY + " X:" + this.x + " Y:" + this.y + " smallX:" + smallX + " smallY:" + smallY + " difference:" + difference + " div:" + div + " goXM:" + goXM + " goYM:" + goYM
+                        
+                        throw new Error("oopies, move to position is not equal to end position, loops: " + loop + ", Hunger: " + this.hunger + " goX:" + goX + " goY:" + goY + " X:" + this.x + " Y:" + this.y + " smallX:" + smallX + " smallY:" + smallY + " gradient:" + gradient)
                     }
                 }
 
@@ -516,6 +528,7 @@
         <button id="clearFood" onclick="clearOrbs()" class="Button" style="left: 4px; top: 32px">clear Orbs</button>
         <button id="addFood" onclick="spawnFood()" class="Button" style="left: 80px;">spawn Food</button>
         <button id="clearFood" onclick="clearFood()" class="Button" style="left: 80px; top: 32px">clear Food</button>
+        <p id="debug" style="position: absolute; top: 50px">debug text</p>
         <div id="infoShower" class="Overlay">
             <button style="position: relative; left: 100px; height: 30px;" onclick="Exit()">x</button>
             <p id="info0" class="OverlayText" style="top: 0;">info0:</p>
