@@ -1,3 +1,4 @@
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8">
@@ -13,44 +14,50 @@
     const MinFrameTime = 1000 / MaxFrameRate
     
     class Vector2 {
-        constructor(x = 0, y = 0) {
-            this.x = x
-            this.y = y
+        constructor(x = Number, y = Number) {
+            this.x = x;
+            this.y = y;
         }
 
+        static #ZERO = new Vector2(0, 0)
+        static #UP = new Vector2(0, -1)
+        static #DOWN = new Vector2(0, 1)
+        static #LEFT = new Vector2(-1, 0)
+        static #RIGHT = new Vector2(1, 0)
+        static #INVALID = new Vector2(null, null)
+        static get ZERO() { return this.#ZERO }
+        static get UP() { return this.#UP }
+        static get DOWN() { return this.#DOWN }
+        static get LEFT() { return this.#LEFT }
+        static get RIGHT() { return this.#RIGHT }
+        static get INVALID() { return this.#INVALID}
+        static get RANDOM() { return new Vector2(Random(-10, 10), Random(-10, 10)) }
+
         Add(value) {
-            if (value instanceof Vector2)
-                return new Vector2(this.x + value.x, this.y + value.y);
-            else if (typeof value == "number")
-                return new Vector2(this.x + value, this.y + value);
+            if (value instanceof Vector2) return new Vector2(this.x + value.x, this.y + value.y);
+            else if (typeof value == "number") return new Vector2(this.x + value, this.y + value);
             return -1;
         }
 
         Sub(value) {
-            if (value instanceof Vector2)
-                return new Vector2(this.x - value.x, this.y - value.y);
-            else if (typeof value == "number")
-                return new Vector2(this.x - Scaler, this.y - Scaler);
+            if (value instanceof Vector2) return new Vector2(this.x - value.x, this.y - value.y);
+            else if (typeof value == "number") return new Vector2(this.x - value, this.y - value);
             return -1;
         }
 
         Multi(value) {
-            if (value instanceof Vector2) 
-                return new Vector2(this.x * value.x, this.y * value.y);
-            else if (typeof value == "number")
-                return new Vector2(this.x * value, this.y * value);
+            if (value instanceof Vector2) return new Vector2(this.x * value.x, this.y * value.y);
+            else if (typeof value == "number") return new Vector2(this.x * value, this.y * value);
             return -1;
         }
 
         Divide(value) {
-            if (value instanceof Vector2)
-                return new Vector2(this.x / value.x, this.y / value.y);
-            else if (typeof value == "number")
-                return new Vector2(this.x / value, this.y / value);
+            if (value instanceof Vector2) return new Vector2(this.x / value.x, this.y / value.y);
+            else if (typeof value == "number") return new Vector2(this.x / value, this.y / value);
             return -1;
         }
       
-        DotProduct(Vector = Vector2) { return this.x * Vector.x + this.y * Vector.y}
+        DotProduct(Vector = Vector2) { return (this.x * Vector.x) + (this.y * Vector.y)}
 
         Magnitude() { return Math.sqrt(this.x**2 + this.y**2); }
 
@@ -58,56 +65,102 @@
 
         Relfect(Normal = Vector2) { 
             const DotVel = this.DotProduct(Normal);
-            return this.Sub(Normal.Multi(2 * DotVel))
+            return this.Sub(Normal.Multi(2 * DotVel));
         }
 
-        static GetNormal(Vec1 = Vector2, Vec2 = Vector2, xNeg = Boolean) {
+        static GetNormal(Vec1 = Vector2, Vec2 = Vector2, xNeg = true) {
             let dx = Vec2.x - Vec1.x;
             let dy = Vec2.y - Vec1.y;
-            let Normal;
-            if (xNeg)
-                Normal = new Vector2(-dy, dx);
-            else if (!xNeg) 
-                Normal = new Vector2(dy, -dx);
+            let Normal = (xNeg) ? new Vector2(-dy, dx) : new Vector2(dy, -dx);
             let Length = Math.sqrt(Normal.x**2 + Normal.y**2);
             return Normal.Divide(Length);
         }
 
     }
-    class Orb {
-        constructor(id = Number, Vector = Vector2) {
-            this.id = id
-            this.position = Vector
-            this.Velocity = new Vector2(Random(-10, 10), Random(-10, 10))
-            this.radius = 25
-
-            this.HasBounced = false
+    
+    class LineSegment {
+        constructor(Point1 = Vector2.ZERO, Point2 = Vector2.ZERO) {
+            this.Point1 = Point1;
+            this.Point2 = Point2;
         }
 
-        get x() { return this.position.x }
-        get y() { return this.position.y }
+        get Normal() { return Vector2.GetNormal(this.Point1, this.Point2, true); }
+        get OtherNormal() { return Vector2.GetNormal(this.Point1, this.Point2, false); }
+        get LineVector() { return this.Point2.Sub(this.Point1); }
+        get Length() { return this.LineVector.Magnitude() }
+        get MidPoint() { return this.Point1.Add(new Vector2(this.LineVector.x / 2, this.LineVector.y / 2)); }
     }
 
-    function AddBall() {
-        document.getElementById("BallsCount").textContent = parseInt(document.getElementById("BallsCount").textContent) + 1;
+    class Orb {
+        constructor(id = Number, Vector = Vector2) {
+            this.id = id;
+            this.position = Vector;
+            this.Velocity = Vector2.RANDOM;
+            this.radius = 25;
+
+            this.HasBounced = false;
+        }
+
+        get x() { return this.position.x; }
+        get y() { return this.position.y; }
     }
     
     async function main() {
-        const MainCanvas = document.getElementById("MainCanvas")
+        const MainCanvas = document.getElementById("MainCanvas");
         MainCanvas.width = window.innerWidth;
         MainCanvas.height = window.innerHeight;
-        const Draw = MainCanvas.getContext("2d")
+        const Draw = MainCanvas.getContext("2d");
 
         let delta = MinFrameTime / 1000;
-        let lastTime = performance.now()
+        let lastTime = performance.now();
 
         let Orbs = {};
-        let OrbPos = new Vector2();
+        
         let frames = [];
 
-        document.getElementById("AddBall").addEventListener("click", () => {
-            let OrbId = crypto.randomUUID()
-            Orbs[OrbId] = new Orb(OrbId, new Vector2(MainCanvas.width / 2, MainCanvas.height / 2))         
+        let Corners = [
+            new Vector2(0, 0),
+            new Vector2(0, window.innerHeight),
+            new Vector2(window.innerWidth, window.innerHeight),
+            new Vector2(window.innerWidth, 0)
+        ];
+        let Lines = [
+            new LineSegment(Corners[0], Corners[1]),
+            new LineSegment(Corners[1], Corners[2]),
+            new LineSegment(Corners[2], Corners[3]),
+            new LineSegment(Corners[3], Corners[0])
+        ];
+
+        window.addEventListener("resize", () => {
+            const MainCanvas = document.getElementById("MainCanvas");
+            MainCanvas.width = window.innerWidth;
+            MainCanvas.height = window.innerHeight;
+
+            Corners = [
+                new Vector2(0, 0),
+                new Vector2(0, window.innerHeight),
+                new Vector2(window.innerWidth, window.innerHeight),
+                new Vector2(window.innerWidth, 0)
+            ];
+            Lines[0] = new LineSegment(Corners[0], Corners[1]);
+            Lines[1] = new LineSegment(Corners[1], Corners[2]);
+            Lines[2] = new LineSegment(Corners[2], Corners[3]);
+            Lines[3] = new LineSegment(Corners[3], Corners[0]);
+        })
+
+        document.getElementById("AddBall").addEventListener("click", () => { 
+            const OrbId = crypto.randomUUID()
+            Orbs[OrbId] = new Orb(OrbId, new Vector2(MainCanvas.width / 2, MainCanvas.height / 2)) 
+            document.getElementById("BallsCount").textContent = parseInt(document.getElementById("BallsCount").textContent) + 1;
+        })
+        
+        let click = Vector2.INVALID;
+        MainCanvas.addEventListener("click", (event) => {
+            if (click == Vector2.INVALID) click = new Vector2(event.pageX, event.pageY);
+            else {
+                Lines.push(new LineSegment(click, new Vector2(event.pageX, event.pageY)));
+                click = Vector2.INVALID;
+            }
         })
 
         async function loop() {
@@ -118,75 +171,33 @@
             Draw.clearRect(0, 0, MainCanvas.width, MainCanvas.height);
 
             for (const key in Orbs) {
-                const firstOrb = Orbs[key];
-                //Other ball collision
-                for (const SecondKey in Orbs) {
-                    const SecondOrb = Orbs[SecondKey];
-                    if (firstOrb.HasBounced) break;
-                    if (SecondKey == key || SecondOrb.HasBounced) continue;
+                const Orb = Orbs[key];
+                const OrbPos = Orb.position
+
+                Lines.forEach(Line => {
+                    const LineNormal = Line.Normal
+                    const OpLineNormal = Line.OtherNormal
+
+                    const MidToBall = OrbPos.Sub(Line.MidPoint);
+                    const DotBallToLine = MidToBall.DotProduct(LineNormal);
                     
-                    let distance = (firstOrb.x - SecondOrb.x)**2 + (firstOrb.y - SecondOrb.y)**2;
-                    const DirectionVec = SecondOrb.position.Sub(firstOrb.position).Normalized();
-                    const DotDirAndVel = DirectionVec.DotProduct(firstOrb.Velocity)
-                    if (distance < (firstOrb.radius + SecondOrb.radius)**2 && DotDirAndVel < 1) { //AHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH do this gngalang frfr frfr!!!
-                        firstOrb.HasBounced = true;
-                        SecondOrb.HasBounced = true;
-                        const firstMag = firstOrb.Velocity.Magnitude();
-                        const secondMag = SecondOrb.Velocity.Magnitude();
-                        
-                        if (firstMag > secondMag) {
-                            const TempVel = firstOrb.Velocity; 
-                            firstOrb.Velocity = SecondOrb.Velocity.Multi(-1);
-                            SecondOrb.Velocity = TempVel;
-                        } else if (firstMag < secondMag) {
-                            const TempVel = SecondOrb.Velocity; 
-                            SecondOrb.Velocity = firstOrb.Velocity.Multi(-1);
-                            firstOrb.Velocity = TempVel;
-                        } else if (firstMag == secondMag) {
-                            SecondOrb.Velocity = SecondOrb.Velocity.Multi(-1);
-                            firstOrb.Velocity = firstOrb.Velocity.Multi(-1);
-                        } else throw new Error("tf did you do???" + firstMag + ", " + secondMag);
-                        break;
+                    if (DotBallToLine <= Orb.radius && -DotBallToLine <= Orb.radius) {
+                        const P1ToBall = Line.LineVector.DotProduct(OrbPos.Sub(Line.Point1));
+                        const P2ToBall = Line.LineVector.Multi(-1).DotProduct(OrbPos.Sub(Line.Point2));
+                        if (P1ToBall > 0 && P2ToBall > 0)
+                            if (Orb.Velocity.DotProduct(LineNormal) > 0 || Orb.Velocity.DotProduct(OpLineNormal) > 0) {
+                                Orb.HasBounced = true;
+                                Orb.Velocity = Orb.Velocity.Relfect(LineNormal);
+                            }
                     }
-                }
+                });
 
-                //Wall collision
-                const Borders = [
-                    new Vector2(0, 0),
-                    new Vector2(0, MainCanvas.height),
-                    new Vector2(MainCanvas.width, MainCanvas.height),
-                    new Vector2(MainCanvas.width, 0),
-                    new Vector2(0, 0)
-                ]
-
-                for (let i = 0; i < 4; i++) {
-                    Point1 = Borders[i];
-                    Point2 = Borders[i+1];
-
-                    const Line = Point2.Sub(Point1)
-                    const LineNormal = Vector2.GetNormal(Point1, Point2, true)
-
-                    const P1ToBall = firstOrb.position.Sub(Point1)
-                    const P2ToBall = firstOrb.position.Sub(Point2)
-
-                    const Midpoint = Point1.Add(new Vector2(Line.x / 2, Line.y / 2));
-                    const MidToBall = firstOrb.position.Sub(Midpoint);
-                    const DotBallToLine = MidToBall.DotProduct(LineNormal)
-
-                    const DotVelToWall = firstOrb.Velocity.DotProduct(LineNormal)
-                    
-                    if (DotBallToLine <= firstOrb.radius && -DotBallToLine <= firstOrb.radius && DotVelToWall > 0) {
-                        firstOrb.HasBounced = true;
-                        firstOrb.Velocity = firstOrb.Velocity.Relfect(LineNormal);
-                    }
-                }
-
-                firstOrb.position = firstOrb.position.Add(firstOrb.Velocity.Multi(delta * 100))
+                Orb.position = OrbPos.Add(Orb.Velocity.Multi(delta * 100))
                 
                 Draw.beginPath();
-                Draw.arc(firstOrb.x, firstOrb.y, firstOrb.radius, 0, Math.PI * 2); 
+                Draw.arc(Orb.x, Orb.y, Orb.radius, 0, Math.PI * 2); 
                 
-                if (firstOrb.HasBounced) Draw.fillStyle = "red";
+                if (Orb.HasBounced) Draw.fillStyle = "red";
                 else Draw.fillStyle = "orange";
                 
                 Draw.fill();
@@ -197,6 +208,12 @@
                 const orb = Orbs[Key];
                 orb.HasBounced = false;
             }
+
+            Lines.forEach(Line => {
+                Draw.moveTo(Line.Point1.x, Line.Point1.y);
+                Draw.lineTo(Line.Point2.x, Line.Point2.y);
+                Draw.stroke();
+            });
   
             let end = performance.now();
 
@@ -212,17 +229,12 @@
 
     
     document.addEventListener("DOMContentLoaded", main);
-    window.addEventListener("resize", () => {
-        const MainCanvas = document.getElementById("MainCanvas");
-        MainCanvas.width = window.innerWidth;
-        MainCanvas.height = window.innerHeight;
-    })
   </script>
 
   <body>
     <span id="fps">fps:</span><br>
     <span id="delta">delta:</span><br>
-    <input id="AddBall" type="button" value="Add Ball" onclick="AddBall()" style="position: relative;"><br>
+    <input id="AddBall" type="button" value="Add Ball" style="position: relative;"><br>
     <span>Balls: </span>
     <span id="BallsCount">0</span>
     <canvas id="MainCanvas" width="1920" height="1080" style="z-index: -1;"></canvas>
@@ -230,8 +242,13 @@
 
   <style>
     html, body {
-      margin: 0 !important;
-      padding: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
     }
 
     canvas {
