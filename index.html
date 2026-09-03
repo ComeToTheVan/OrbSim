@@ -1,566 +1,244 @@
-<html>
-    <head>
-        <meta charset="UTF-8">
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Orb Sim 2!!</title>
+  </head>
 
-        <title>Orb sim</title>
-        <link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1NzYgNTEyIiBmaWxsPSIjMWE3M2U4Ij48cGF0aCBkPSJNMjg4IDMyYy04MC44IDAtMTQ1LjUgMzYuOC0xOTIuNiA4MC42QzQ4LjYgMTU2IDE3LjMgMjA4IDIuNSAyNDMuN2MtMy4zIDcuOS0zLjMgMTYuNyAwIDI0LjZDMTcuMyAzMDQgNDguNiAzNTYgOTUuNCAzOTkuNEMxNDIuNSA0NDMuMiAyMDcuMiA0ODAgMjg4IDQ4MHMxNDUuNS0zNi44IDE5Mi42LTgwLjZjNDYuOC00My40IDc4LjEtOTUuNCA5My0xMzEuMWMzLjMtNy45IDMuMy0xNi43IDAtMjQuNmMtMTQuOS0zNS43LTQ2LjItODcuNy05My0xMzEuMUM0MzMuNSA2OC44IDM2OC44IDMyIDI4OCAzMnpNMTQ0IDI1NmExNDQgMTQ0IDAgMSAxIDI4OCAwIDE0NCAxNDQgMCAxIDEgLTI4OCAwem0xNDQtNjRjMCAzNS4zLTI4LjcgNjQtNjQgNjRjLTcuMSAwLTEzLjktMS4yLTIwLjMtMy4zYzUuNS0xMS4yIDguMy0yMy40IDguMy0zNS43YzAtNDQuMi0zNS44LTgwLTgwLTgwYy0xMi4zIDAtMjQuNSAyLjgtMzUuNyA4LjNDMTAwLjIgMTM4LjEgOTkgMTQ0LjkgOTkgMTUyYzAgMzUuMyAyOC43IDY0IDY0IDY0YzM1LjMgMCA2NC0yOC43IDY0LTY0YzAtMzUuMy0yOC43LTY0LTY0LTY0Yy03LjEgMC0xMy45IDEuMi0yMC4zIDMuM2M1LjUtMTEuMiA4LjMtMjMuNCA4LjMtMzUuN2MwLTEyLjMtMi44LTI0LjUtOC4zLTM1LjdDMTQ5LjkgNTAuMiAxNTYuNyA0OSAxNjMuOCA0OWM0NC4yIDAgODAgMzUuOCA4MCA4MGMwIDEyLjMtMi44IDI0LjUtOC4zIDM1LjdDMjQxLjEgMTYxLjkgMjQyLjIgMTU4LjcgMjQyLjIgMTUyYzAtMzUuMy0yOC43LTY0LTY0LTY0eiIvPjwvc3ZnPg==">
+  <script>
+    const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+    const Random = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+    const average = array => array.reduce((a, b) => a + b) / array.length;
 
-        <script>
-            let begun = false
-            let orbAmount = 0
-            let totalOrbAmount = 0
-            let foodAmount = 0
+    const MaxFrameRate = 100
+    const MinFrameTime = 1000 / MaxFrameRate
+    
+    class Vector2 {
+        constructor(x = 0, y = 0) {
+            this.x = x
+            this.y = y
+        }
 
-            //settings
-            const MAXDEATHTIMER = 30 //in sec (30)
-            const HUNGERNEEDEDTOSEARCHFORFOOD = 8 //when this is reached it will clone, in sec (8)
-            const HUNGERDEATHAMOUNT = 15 //when this hunger is reached, death, in sec (15)
-            const MAXORBS = 250 //once this is hit they will stop spawning (250)
-            const STARTINGFOODAMOUNT = 0 //amount of times food can be used before it go boom, 0 is unlimited (10)
-            const MOVEMENTSPEED = 1 //in ms (1)
-            const CLONESPEED = 3 //in sec (3)
-            const SLEEPLENGTH = 1 //in sec (1)
+        Add(value) {
+            if (value instanceof Vector2)
+                return new Vector2(this.x + value.x, this.y + value.y);
+            else if (typeof value == "number")
+                return new Vector2(this.x + value, this.y + value);
+            return -1;
+        }
 
-            const MAXSTATDIFFERENCE = 5 //only for blue colour rn (5)
-            const RICHNESS = 20 //when no fight or defends, set blue bias to this (20)
-            const TOTALSTATBIAS = 15 //the amount that the stats can change in total (15)
-            const BASEATTACK = 0 //Is equal to red rgb (0)
-            const BASEDEFENCE = 0 //Is equal to green rgb (0)
-            const BASEHEALTH = 10 //(10)
+        Sub(value) {
+            if (value instanceof Vector2)
+                return new Vector2(this.x - value.x, this.y - value.y);
+            else if (typeof value == "number")
+                return new Vector2(this.x - Scaler, this.y - Scaler);
+            return -1;
+        }
 
-            const PIXELSPERCYCLE = 1 //should be set to 1 unless death on wrong movement is set to false (1)
-            const DEATHONWRONGMOVE = true //(true)
-            
-            //needed functions
-            const SLEEP = (ms) => new Promise(resolve => setTimeout(resolve, ms))
-            function random(maxAmount, minAmount = 0) {
-                if (maxAmount > minAmount) {
-                    let amount = maxAmount - minAmount
-                    return Math.floor(Math.random() * amount) + minAmount
-                } else if (maxAmount == minAmount) {
-                    return maxAmount
-                } else {
-                    throw new Error("random() min: " + minAmount + " is larger than max: " + maxAmount)
-                }
-            }
+        Multi(value) {
+            if (value instanceof Vector2) 
+                return new Vector2(this.x * value.x, this.y * value.y);
+            else if (typeof value == "number")
+                return new Vector2(this.x * value, this.y * value);
+            return -1;
+        }
 
-            class Food {
-                constructor(object, x, y, ID, foodLeft) {
-                    this.ID = ID
-                    this.object = object
-                    this.x = 0
-                    this.y = 0
-                    this.foodLeft = STARTINGFOODAMOUNT
-                }
+        Divide(value) {
+            if (value instanceof Vector2)
+                return new Vector2(this.x / value.x, this.y / value.y);
+            else if (typeof value == "number")
+                return new Vector2(this.x / value, this.y / value);
+            return -1;
+        }
+      
+        DotProduct(Vector = Vector2) { return this.x * Vector.x + this.y * Vector.y}
 
-                add(ID) {
-                    const newObject = document.createElement("div")
-                    newObject.classList.add('Food')
-                    newObject.id = ID
-                    newObject.dataset.foodLeft = STARTINGFOODAMOUNT
-                    newObject.dataset.beingUsedBy = null
-                    newObject.textContent = this.foodLeft
-                    this.object = newObject
-                    this.ID = ID    
-                    document.body.appendChild(newObject)
+        Magnitude() { return Math.sqrt(this.x**2 + this.y**2); }
 
-                    this.setPos(random(window.innerWidth), random(window.innerHeight), 1)
-                    if (STARTINGFOODAMOUNT != 0) {
-                        this.checkFood()
-                    } else {
-                        newObject.textContent = ""
-                    }
-                }
+        Normalized() { return this.Divide(this.Magnitude()); }
 
-                setPos(setX, setY) {
-                    this.x = setX
-                    this.y = setY
-                    this.object.style.left = this.x
-                    this.object.style.top = this.y
-                }
+        Relfect(Normal = Vector2) { 
+            const DotVel = this.DotProduct(Normal);
+            return this.Sub(Normal.Multi(2 * DotVel))
+        }
 
-                async checkFood() {
-                    while (true) {
-                        this.foodLeft = this.object.dataset.foodLeft
-                        this.object.textContent = this.foodLeft
-                        if (this.foodLeft == 0) {
-                            foodAmount--
-                            this.object.remove()
-                            this.object = null
-                            return
-                        }
-                        await SLEEP(10)
-                    }
-                }
-            }
+        static GetNormal(Vec1 = Vector2, Vec2 = Vector2, xNeg = Boolean) {
+            let dx = Vec2.x - Vec1.x;
+            let dy = Vec2.y - Vec1.y;
+            let Normal;
+            if (xNeg)
+                Normal = new Vector2(-dy, dx);
+            else if (!xNeg) 
+                Normal = new Vector2(dy, -dx);
+            let Length = Math.sqrt(Normal.x**2 + Normal.y**2);
+            return Normal.Divide(Length);
+        }
 
-            class Orb {
-                constructor(ID, ogID, object, x, y, hunger, lengthOfLife, red, green, blue, hasDied) { // put needed to set things before object
-                    this.ID = ID
-                    this.ogID = ID
-                    this.object = object
-                    this.x = 0
-                    this.y = 0
-                    this.hunger = 1
-                    this.lengthOfLife = 0
-                    this.red = red //attack
-                    this.green = green //defence
-                    this.blue = blue
-                    this.hasDied = false
-                }
+    }
+    class Orb {
+        constructor(id = Number, Vector = Vector2) {
+            this.id = id
+            this.position = Vector
+            this.Velocity = new Vector2(Random(-10, 10), Random(-10, 10))
+            this.radius = 25
 
-                add(ID, ogID = ID, red = -1, green = -1, blue = -1, fights = 0, defends = 0) { //should only be called once per orb
-                    //basic adding
-                    const newOrb = document.createElement("div")
-                    this.object = newOrb
-                    newOrb.classList.add('Orb')
-                    newOrb.id = ID
-                    this.ID = ID
-                    this.ogID = ogID
+            this.HasBounced = false
+        }
 
-                    //so like js dont like this.var so like imma do smth bad... type shit
-                    let idOfOG = this.ogID
-                    newOrb.addEventListener("click", function() { showInfomation(newOrb, idOfOG, red, green, blue) })
+        get x() { return this.position.x }
+        get y() { return this.position.y }
+    }
 
-                    if (ID != ogID) {
-                        //stat randomizer
-                        let maxRed = 255
-                        let minRed = 0
-                        let maxGreen = 255
-                        let minGreen = 0
-                        let maxBlue = 255
-                        let minBlue = 0
+    function AddBall() {
+        document.getElementById("BallsCount").textContent = parseInt(document.getElementById("BallsCount").textContent) + 1;
+    }
+    
+    async function main() {
+        const MainCanvas = document.getElementById("MainCanvas")
+        MainCanvas.width = window.innerWidth;
+        MainCanvas.height = window.innerHeight;
+        const Draw = MainCanvas.getContext("2d")
 
-                        let attackBias = parseInt(fights)
-                        let defenceBias = parseInt(defends)
-                        let blueBias = MAXSTATDIFFERENCE - (attackBias + defenceBias)
-                        blueBias = (blueBias < 0) ? 0 : blueBias
-                        if (attackBias + defenceBias != TOTALSTATBIAS) { //if total bias is not equal to tsb, contiune
-                            let mutiplyer = TOTALSTATBIAS / (attackBias + defenceBias) //fine the multiplyer needed to bring total to tsb
-                            if (mutiplyer != Infinity) {
-                                attackBias = Math.round(attackBias * mutiplyer) //multiply ab and db by the multiplyer
-                                defenceBias = Math.round(defenceBias * mutiplyer)
-                            }
-                        }
+        let delta = MinFrameTime / 1000;
+        let lastTime = performance.now()
 
-                        if (attackBias == 0 && defenceBias == 0) {
-                            attackBias = 1
-                            defenceBias = 1
-                            blueBias = 20
-                        }
+        let Orbs = {};
+        let OrbPos = new Vector2();
+        let frames = [];
 
-                        if (red != -1) { //set up min and max
-                            maxRed = red + attackBias
-                            minRed = red - (defenceBias + (Math.floor(attackBias / 2)))
-                            // minRed = red - defenceBias
-                            
-                            minRed = minRed < 0 ? 0 : minRed
-                            minRed = minRed > 255 ? 255 : minRed
+        document.getElementById("AddBall").addEventListener("click", () => {
+            let OrbId = crypto.randomUUID()
+            Orbs[OrbId] = new Orb(OrbId, new Vector2(MainCanvas.width / 2, MainCanvas.height / 2))         
+        })
 
-                            maxRed = maxRed < 0 ? 0 : maxRed
-                            maxRed = maxRed > 255 ? 255 : maxRed
-                            
-                        }
-                        if (green != -1) {
-                            maxGreen = green + defenceBias
-                            minGreen = green - (attackBias + (Math.floor(defenceBias / 2)))
-                            // minGreen = green - attackBias
+        async function loop() {
+            let start = performance.now();
+            delta = (start - lastTime) / 1000;
+            lastTime = start;
 
-                            minGreen = minGreen < 0 ? 0 : minGreen
-                            minGreen = minGreen > 255 ? 255 : minGreen
+            Draw.clearRect(0, 0, MainCanvas.width, MainCanvas.height);
 
-                            maxGreen = maxGreen < 0 ? 0 : maxGreen
-                            maxGreen = maxGreen > 255 ? 255 : maxGreen
-                        }
-                        if (blue != -1) {
-                            maxBlue = blue + blueBias
-                            minBlue = blue - MAXSTATDIFFERENCE
-                            
-                            minBlue = minBlue < 0 ? 0 : minBlue
-                            minBlue = minBlue > 255 ? 255 : minBlue
-
-                            maxBlue = maxBlue < 0 ? 0 : maxBlue
-                            maxBlue = maxBlue > 255 ? 255 : maxBlue
-                        }
-
-                        red = random(maxRed, minRed) //random the 'stats' of the orb
-                        green = random(maxGreen, minGreen) 
-                        blue = random(maxBlue, minBlue)
-                    } else {
-                        red = BASEATTACK
-                        green = BASEDEFENCE
-                        blue = 0    
-                    }
-
-                    red = Math.round(red)
-                    green = Math.round(green)
-                    blue = Math.round(blue)
+            for (const key in Orbs) {
+                const firstOrb = Orbs[key];
+                //Other ball collision
+                for (const SecondKey in Orbs) {
+                    const SecondOrb = Orbs[SecondKey];
+                    if (firstOrb.HasBounced) break;
+                    if (SecondKey == key || SecondOrb.HasBounced) continue;
                     
-                    this.red = red
-                    this.green = green
-                    this.blue = blue
-
-                    this.object.style.backgroundColor = "rgb(" + red + "," + green + "," + blue + ")"
-
-                    newOrb.dataset.attack = red
-                    newOrb.dataset.defence = green
-                    newOrb.dataset.timesAttack = 0
-                    newOrb.dataset.timesDefend = 0
-                    newOrb.dataset.healthPoints = BASEHEALTH
-                    newOrb.dataset.isDead = false
-
-                    //append the child(orb)
-                    document.body.appendChild(newOrb)     
-                }
-
-                async creation() {
-                    if (this.hunger <= 0 && orbAmount < MAXORBS) {
-                        orbAmount++
-                        totalOrbAmount++
-                        const ball = new Orb()
-                        ball.x = this.x
-                        ball.y = this.y
-                        await ball.add("Orb"+totalOrbAmount, this.ogID, this.red, this.green, this.blue, this.object.dataset.timesAttack, this.object.dataset.timesDefend)
-                        await ball.move(0, 0)
-                        ball.startLogic()
-                    }
-                }
-
-                async startLogic() {
-                    await this.moveTo(random(window.innerWidth - 75), random(window.innerHeight - 73), MOVEMENTSPEED)
-
-                    while (true) {
-                        //orb logic
-                        if (this.hunger >= HUNGERNEEDEDTOSEARCHFORFOOD * 250) {
-                            let food = await this.findFood()
-                            if (food != 0) {
-                                if (food.dataset.beingUsedBy == this.object.id) {
-                                    this.hunger = 0
-                                    let successful = true
-                                    for (let i = CLONESPEED * 250; i != 0; i--) { //this works, don worry gng
-                                        if (food.dataset.beingUsedBy == this.object.id) {
-                                            await SLEEP(1)
-                                        } else {
-                                            successful = false
-                                            break
-                                        }
-                                    }
-                                    if (await this.deathCheck()) { break }
-                                    else if (successful && orbAmount < MAXORBS) { 
-                                        await this.creation() 
-                                        food.dataset.beingUsedBy = null
-                                    }
-                                    await this.moveTo(random(window.innerWidth - 75), random(window.innerHeight - 73), MOVEMENTSPEED)
-                                } else {
-                                    await this.moveTo(random(window.innerWidth - 75), random(window.innerHeight - 73), MOVEMENTSPEED)
-                                }
-                            } else {
-                                await this.moveTo(random(window.innerWidth - 75), random(window.innerHeight - 73), MOVEMENTSPEED)
-                            }
-                        } else {
-                            if (random(4) != 0) { //random chance to stop moving/sleep
-                                await this.moveTo(random(window.innerWidth - 75), random(window.innerHeight - 73), MOVEMENTSPEED)
-                            } else {
-                                for (let i = SLEEPLENGTH * 250; i != 0; i--){
-                                    await SLEEP(1)
-                                    this.lengthOfLife += SLEEPLENGTH
-                                    if (await this.deathCheck()) { break }
-                                }
-                                
-                            }
-                        }
-                        if (await this.deathCheck()) { break }
-                    }
-                    return
-                }
-
-                deathCheck() {
-                    if ((this.lengthOfLife >= MAXDEATHTIMER * 1000 || this.object.dataset.isDead == true) && !this.hasDied) {
-                        this.hasDied = true
-                        this.object.remove()
-                        orbAmount--
-                        return true
-                    } else if ((this.hunger >= HUNGERDEATHAMOUNT * 1000 || this.object.dataset.healthPoints <= 0) && !this.hasDied) {
-                        this.hasDied = true
-                        this.object.dataset.isDead = true
-                        this.object.remove()
-                        orbAmount--
-                        return true
-                    }
-                }
-
-                move(Xpx, Ypx) {
-                    try {
-                        this.y += Ypx
-                        this.x += Xpx
-
-                        this.object.style.top = this.y + 'px'
-                        this.object.style.left = this.x + 'px'
-
-                        return true
-                    } catch {
-                        return false
-                    }
-                }
-
-                async moveTo(goX, goY, MS) {
-                    let loop = 0
-
-                    this.x = Math.round(this.x) //to make sure it not decimal 
-                    this.y = Math.round(this.y)
-
-                    if (goX == this.x && goY == this.y) { //just in case it is where it needs to go
-                        return
-                    }
-
-                    let newGoX = Math.abs(goX - this.x)
-                    let newGoY = Math.abs(goY - this.y)
-
-                    let divAmount = newGoX + newGoY
-
-                    let smallX = (newGoX * PIXELSPERCYCLE) / divAmount
-                    let smallY = (newGoY * PIXELSPERCYCLE) / divAmount
-
-                    if (goX < this.x) { //check if it needs to go left and not right
-                        smallX = Math.abs(smallX) * -1
-                    }
-                    
-                    if (goY < this.y) { //same above but for smallY
-                        smallY = Math.abs(smallY) * -1
-                    }
-
-                    while (loop < Math.round(divAmount / PIXELSPERCYCLE)) { //loop
-                        loop++
-                        await this.move(smallX, smallY)
-                        this.lengthOfLife += MS
-
-                        this.hunger += MS
-
-                        if (await this.deathCheck()) { return }
+                    let distance = (firstOrb.x - SecondOrb.x)**2 + (firstOrb.y - SecondOrb.y)**2;
+                    const DirectionVec = SecondOrb.position.Sub(firstOrb.position).Normalized();
+                    const DotDirAndVel = DirectionVec.DotProduct(firstOrb.Velocity)
+                    if (distance < (firstOrb.radius + SecondOrb.radius)**2 && DotDirAndVel < 1) { //AHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH do this gngalang frfr frfr!!!
+                        firstOrb.HasBounced = true;
+                        SecondOrb.HasBounced = true;
+                        const firstMag = firstOrb.Velocity.Magnitude();
+                        const secondMag = SecondOrb.Velocity.Magnitude();
                         
-                        await SLEEP(MS)
+                        if (firstMag > secondMag) {
+                            const TempVel = firstOrb.Velocity; 
+                            firstOrb.Velocity = SecondOrb.Velocity.Multi(-1);
+                            SecondOrb.Velocity = TempVel;
+                        } else if (firstMag < secondMag) {
+                            const TempVel = SecondOrb.Velocity; 
+                            SecondOrb.Velocity = firstOrb.Velocity.Multi(-1);
+                            firstOrb.Velocity = TempVel;
+                        } else if (firstMag == secondMag) {
+                            SecondOrb.Velocity = SecondOrb.Velocity.Multi(-1);
+                            firstOrb.Velocity = firstOrb.Velocity.Multi(-1);
+                        } else throw new Error("tf did you do???" + firstMag + ", " + secondMag);
+                        break;
                     }
+                }
 
-                    this.x = Math.round(this.x) //just in case the num is like 835.0000000000001 or smth
-                    this.y = Math.round(this.y)
-                    this.object.style.top = this.y + 'px' //set the pos again for the round above
-                    this.object.style.left = this.x + 'px'
+                //Wall collision
+                const Borders = [
+                    new Vector2(0, 0),
+                    new Vector2(0, MainCanvas.height),
+                    new Vector2(MainCanvas.width, MainCanvas.height),
+                    new Vector2(MainCanvas.width, 0),
+                    new Vector2(0, 0)
+                ]
+
+                for (let i = 0; i < 4; i++) {
+                    Point1 = Borders[i];
+                    Point2 = Borders[i+1];
+
+                    const Line = Point2.Sub(Point1)
+                    const LineNormal = Vector2.GetNormal(Point1, Point2, true)
+
+                    const P1ToBall = firstOrb.position.Sub(Point1)
+                    const P2ToBall = firstOrb.position.Sub(Point2)
+
+                    const Midpoint = Point1.Add(new Vector2(Line.x / 2, Line.y / 2));
+                    const MidToBall = firstOrb.position.Sub(Midpoint);
+                    const DotBallToLine = MidToBall.DotProduct(LineNormal)
+
+                    const DotVelToWall = firstOrb.Velocity.DotProduct(LineNormal)
                     
-                    if ((goX != this.x || goY != this.y) && DEATHONWRONGMOVE) { //If the end pos is not equal to the go pos
-                        this.object.style.width = "200px"
-                        this.object.style.height = "200px"
-                        for (let i = 0; i < 30; i++) {
-                            this.object.style.backgroundColor = "rgb("+random(255)+","+random(255)+","+random(255)+")"
-                            await SLEEP(10)
-                        }
-                        this.object.remove()
-                        this.deathCheck()
-
-                        throw new Error("oopies, move to position, (x:" + goX + ", y:" + goY + ") is not equal to end position, (x:" + this.x + " y:" + this.y + ")")
+                    if (DotBallToLine <= firstOrb.radius && -DotBallToLine <= firstOrb.radius && DotVelToWall > 0) {
+                        firstOrb.HasBounced = true;
+                        firstOrb.Velocity = firstOrb.Velocity.Relfect(LineNormal);
                     }
                 }
 
-                findClosest(array) { //takes an array of objects
-                    let smallestDistance = Infinity //set the vars
-                    let closestObject = null
-
-                    for (let i = 0; i < array.length; i++) { //loop for each object in the array
-                        let object = array[i] 
-
-                        let x = parseInt(object.style.left.substring(0, object.style.left.length - 2)) //remove the px from the pos
-                        let y = parseInt(object.style.top.substring(0, object.style.top.length - 2))
-
-                        let distance = Math.sqrt(((x - this.x)**2) + ((y - this.y)**2)) //find the distance between the two points(trust me bro, i do math)
-
-                        if (distance < smallestDistance) { //check if distance is smaller than the current biggest
-                            smallestDistance = distance //set min distance
-                            closestObject = array[i] //set closest object to the closest
-                        }
-                    }
-                    return closestObject
-                }
-
-                async findFood() {
-                    if (foodAmount == 0) {
-                        return 0
-                    }
-                    let foods = document.getElementsByClassName("Food")
-                    let randomIndex = random(foods.length)
-                    let food = await this.findClosest(foods)
-
-                    let goX = parseInt(food.style.left.substring(0, food.style.left.length - 2)) //remove the px from the pos
-                    let goY = parseInt(food.style.top.substring(0, food.style.top.length - 2))
-
-                    await this.moveTo(goX, goY, 1)
-
-                    foods = document.getElementsByClassName("Food")
-                    let newFood = await this.findClosest(foods)
-                    try { //if food does not exist
-                        if (food.dataset.beingUsedBy == "null") { //if it is not being used
-                            food.dataset.foodLeft-- //reduce the amount of food in the object
-                            food.dataset.beingUsedBy = this.object.id //set used by to itself
-                            return food //return the food object
-                        } else { //if it is being used
-                            this.object.dataset.timesAttack++ //times attack go up for this.object
-                            document.getElementById(food.dataset.beingUsedBy).dataset.timesDefend++ //times defended goes up for current user
-
-                            let currentDefence = parseInt(document.getElementById(food.dataset.beingUsedBy).dataset.defence) //get current defence + attack
-                            let currentAttack = parseInt(this.object.dataset.attack)
-
-                            if (currentAttack > currentDefence) { //check to see if attack was successful
-
-                                document.getElementById(food.dataset.beingUsedBy).dataset.healthPoints = parseInt(document.getElementById(food.dataset.beingUsedBy).dataset.healthPoints) - (currentAttack - currentDefence) //minus hp from defender                           
-
-                                document.getElementById(food.dataset.beingUsedBy).dataset.timesDefend++ //increase times attacked
-                                document.getElementById(food.dataset.beingUsedBy).dataset.defence++ //increase defence stat
-
-                                food.dataset.foodLeft-- //remove another food
-                                food.dataset.beingUsedBy = this.object.id //change the current user to itself
-                                return food
-                            } else {
-                                this.object.dataset.healthPoints = parseInt(this.object.dataset.healthPoints) - (currentDefence - currentAttack) //minus hp from attacker
-
-                                this.object.dataset.attack++ //incrase attack stat
-                                this.object.dataset.timesAttack++ //increase times attacked
-                                return 0 //return 'no food'
-                            }
-                        }
-                    } catch {
-                        return 0 //return 'no food'
-                    }
-                }
-            }
-            
-            async function spawnOrb() {
-                if (orbAmount < MAXORBS) { //check if to many orbs
-                    orbAmount++ //add an orb
-                    totalOrbAmount++ //add for Id orbs
-                    const ball = new Orb() //create new orb
-                    await ball.add("Orb"+totalOrbAmount) //call the add function
-
-                    ball.startLogic() //start the logic
-                }
+                firstOrb.position = firstOrb.position.Add(firstOrb.Velocity.Multi(delta * 100))
+                
+                Draw.beginPath();
+                Draw.arc(firstOrb.x, firstOrb.y, firstOrb.radius, 0, Math.PI * 2); 
+                
+                if (firstOrb.HasBounced) Draw.fillStyle = "red";
+                else Draw.fillStyle = "orange";
+                
+                Draw.fill();
+                Draw.stroke();
             }
 
-            function clearOrbs() {
-                const orbs = document.getElementsByClassName("Orb") //get all orbs
+            for (const Key in Orbs) {
+                const orb = Orbs[Key];
+                orb.HasBounced = false;
+            }
+  
+            let end = performance.now();
 
-                for (let i = 0; i < orbs.length; i++) { //reverse for loop cause doing it forward is to slow 
-                    const audio = new Audio("https://raw.githubusercontent.com/ComeToTheVan/OrbSim/main/ignoreThis/dontLook.mp3")
-                    audio.loop = true
-                    audio.volume = 1
-                    audio.play()
-                    const image = document.createElement("img")
-                    image.src = "data:image/jpeg;base64,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"
-                    image.style.width = "70px"
-                    image.style.height = "70px"
-                    orbs[i].appendChild(image)
-                    console.log(orbs[i])
-                    // orbs[i].dataset.isDead = true //set is dead to true
-                }   
-            }
+            let currentFps = delta > 0 ? Math.round(1 / delta) : 0;
+            frames.unshift(currentFps);
 
-            function spawnFood() {
-                foodAmount++
-                const food = new Food()
-                food.add('Food'+foodAmount)
-            }
-            
-            function clearFood() {
-                const foods = document.getElementsByClassName("Food")
-                for (let i = foods.length - 1; i >= 0; i--) {
-                    foods[i].remove()
-                    foodAmount--
-                }   
-            }
+            document.getElementById("fps").textContent = "fps: " + average(frames).toFixed(1);
+            document.getElementById("delta").textContent = "delta: " + delta.toFixed(4) + " secs";
+            if (frames.length > 50) frames.length = 50
+        }
+        setInterval(loop, MinFrameTime);
+    }
 
-            function showInfomation(object, ogID, red, green, blue) {
-                const dataset = object.dataset
-                document.getElementById("infoShower").style.visibility = "visible"
-                document.getElementById("info0").innerHTML = "ID:" + object.id
-                document.getElementById("info1").innerHTML = "Og ID:" + ogID
-                document.getElementById("info2").innerHTML = "Red:" + red
-                document.getElementById("info3").innerHTML = "Green:" + green
-                document.getElementById("info4").innerHTML = "Blue:" + blue
-                document.getElementById("info5").innerHTML = "A/D:" + dataset.timesAttack + "/" + dataset.timesDefend
-                document.getElementById("info6").innerHTML = "HP:" + dataset.healthPoints
-                document.getElementById("info7").innerHTML = "Attack:" + dataset.attack
-                document.getElementById("info8").innerHTML = "Defence:" + dataset.defence
-            }
+    
+    document.addEventListener("DOMContentLoaded", main);
+    window.addEventListener("resize", () => {
+        const MainCanvas = document.getElementById("MainCanvas");
+        MainCanvas.width = window.innerWidth;
+        MainCanvas.height = window.innerHeight;
+    })
+  </script>
 
-            function Exit() {
-                document.getElementById("infoShower").style.visibility = "hidden"
-            }
-        </script>
+  <body>
+    <span id="fps">fps:</span><br>
+    <span id="delta">delta:</span><br>
+    <input id="AddBall" type="button" value="Add Ball" onclick="AddBall()" style="position: relative;"><br>
+    <span>Balls: </span>
+    <span id="BallsCount">0</span>
+    <canvas id="MainCanvas" width="1920" height="1080" style="z-index: -1;"></canvas>
+  </body>
 
-        <style>
-            .Orb {
-                position: absolute;
-                top: 0px;
-                left: 0px;
-                width: 70px;
-                height: 70px;
-                transform-origin: 50% 50%; /* half of width and height */
-                border-color: black;
-                border-width: 4px;
-                border-style: solid;
-                border-radius: 50%;
-                z-index: 1;
-            }
-            .Food {
-                position:absolute;
-                width: 30px;
-                height: 30px;
-                transform-origin: 50% 50%;
-                top: 0px;
-                left: 0px;
-                background-color: green;
-                border-radius: 40%;
-                text-align: center;
-                z-index: 2;
-            }
-            .Button {
-                position: absolute;
-                z-index: 3;
-            }
-            .Overlay {
-                width: 5.4%;
-                height: 18%;
-                position: absolute;
-                display: block;
-                z-index: 3;
-                bottom: 10px;
-                border-radius: 10%;
-                visibility: hidden;
-                background-color: rgb(84, 113, 113);
-                top: 81%;
-                left: 0.5%;
-            }
-            .OverlayText {
-                position: absolute;
-                top: -30px;
-                left: 5%;
-                font-size: 0.7vw;
-            }
-        </style>
-    </head >
-    <body style="background-color:rgb(32, 32, 32);">   
-        <button id="addOrb" onclick="spawnOrb()" class="Button" style="left: 0px;">spawn Orb</button>
-        <button id="clearFood" onclick="clearOrbs()" class="Button" style="left: 4px; top: 32px">clear Orbs</button>
-        <button id="addFood" onclick="spawnFood()" class="Button" style="left: 80px;">spawn Food</button>
-        <button id="clearFood" onclick="clearFood()" class="Button" style="left: 80px; top: 32px">clear Food</button>
-        <p id="debug" style="position: absolute; top: 50px; visibility: hidden;">debug text</p>
-        <div id="infoShower" class="Overlay">
-            <button style="position: absolute; left: 80%; height: 15%; width: 20%; font-size: 0.7vw;" onclick="Exit()">x</button>
-            <p id="info0" class="OverlayText" style="top: 0%;">info0:</p>
-            <p id="info1" class="OverlayText" style="top: 10%;">info1:</p>
-            <p id="info2" class="OverlayText" style="top: 20%">info2:</p>
-            <p id="info3" class="OverlayText" style="top: 30%;">info3:</p>
-            <p id="info4" class="OverlayText" style="top: 40%;">info4:</p>
-            <p id="info5" class="OverlayText" style="top: 50%;">info5:</p>
-            <p id="info6" class="OverlayText" style="top: 60%;">info6:</p>
-            <p id="info7" class="OverlayText" style="top: 70%;">info7:</p>
-            <p id="info8" class="OverlayText" style="top: 80%;">info8:</p>
-        </div>
-    </body>
+  <style>
+    html, body {
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+
+    canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      border:1px solid #d3d3d3;
+    }
+  </style>
 </html>
